@@ -1,7 +1,7 @@
 # XAF Model Editor VS Code Extension
 
 [![Build and Publish](https://github.com/Need2Code-AB/vscode.extensions.xaf.modeleditor/actions/workflows/build-and-publish.yml/badge.svg)](https://github.com/Need2Code-AB/vscode.extensions.xaf.modeleditor/actions/workflows/build-and-publish.yml)
-[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/dvisious-need2code-ab.xaf-modeleditor)](https://marketplace.visualstudio.com/items?itemName=dvisious-need2code-ab.xaf-modeleditor)
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/DvisiousNeed2CodeAB.xaf-modeleditor)](https://marketplace.visualstudio.com/items?itemName=DvisiousNeed2CodeAB.xaf-modeleditor)
 
 This extension integrates the DevExpress XAF Model Editor into Visual Studio Code, enabling seamless editing of `Model.xafml` files with automatic version detection and robust error handling.
 

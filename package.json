@@ -3,7 +3,7 @@
   "displayName": "XAF Model Editor Integration",
   "description": "Integrates DevExpress XAF Model Editor with VS Code. Right-click or double-click Model.xafml to build and launch the correct Model Editor version.",
   "version": "0.0.18",
-  "publisher": "dvisious-need2code-ab",
+  "publisher": "DvisiousNeed2CodeAB",
   "engines": {
     "vscode": ">=1.70.0"
   },

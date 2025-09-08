@@ -8,7 +8,7 @@ This guide explains how to set up automated publishing of the XAF Model Editor e
 
 1. Go to [Visual Studio Marketplace Manage](https://marketplace.visualstudio.com/manage)
 2. Sign in with your Microsoft/Azure account
-3. Create a publisher (or use existing): `dvisious-need2code-ab`
+3. Create a publisher (or use existing): `DvisiousNeed2CodeAB`
 
 ### 2. Personal Access Token (PAT)
 
@@ -93,7 +93,7 @@ The `build-vsix.ps1` script automatically increments the patch version.
 
 ## Marketplace Information
 
-- **Publisher**: dvisious-need2code-ab
+- **Publisher**: DvisiousNeed2CodeAB
 - **Extension ID**: xaf-modeleditor
 - **Display Name**: XAF Model Editor Integration
 - **Category**: Other
