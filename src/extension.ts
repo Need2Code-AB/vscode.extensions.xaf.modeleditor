@@ -1,3 +1,4 @@
+import { XafModelTreeProvider } from './modelTree';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -20,6 +21,15 @@ function log(message: string) {
  * Registers context menu and double-click for Model.xafml files.
  */
 export function activate(context: vscode.ExtensionContext) {
+    // Register XAF Model Files Tree View
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (workspaceFolders && workspaceFolders.length > 0) {
+        const treeProvider = new XafModelTreeProvider(workspaceFolders[0].uri.fsPath);
+        vscode.window.registerTreeDataProvider('xafModelFiles', treeProvider);
+        context.subscriptions.push(
+            vscode.commands.registerCommand('xaf-modeleditor.refreshModelTree', () => treeProvider.refresh())
+        );
+    }
     // Command to reset the "Don't show again" dialog
     const resetDialogCmd = vscode.commands.registerCommand('xaf-modeleditor.resetStartDialog', async () => {
         const dontShowKey = 'xaf-modeleditor.suppressStartDialog';

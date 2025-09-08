@@ -35,6 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 exports.deactivate = deactivate;
+const modelTree_1 = require("./modelTree");
 const vscode = __importStar(require("vscode"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
@@ -54,6 +55,20 @@ function log(message) {
  * Registers context menu and double-click for Model.xafml files.
  */
 function activate(context) {
+    // Register XAF Model Files Tree View
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (workspaceFolders && workspaceFolders.length > 0) {
+        const treeProvider = new modelTree_1.XafModelTreeProvider(workspaceFolders[0].uri.fsPath);
+        vscode.window.registerTreeDataProvider('xafModelFiles', treeProvider);
+        context.subscriptions.push(vscode.commands.registerCommand('xaf-modeleditor.refreshModelTree', () => treeProvider.refresh()));
+    }
+    // Command to reset the "Don't show again" dialog
+    const resetDialogCmd = vscode.commands.registerCommand('xaf-modeleditor.resetStartDialog', async () => {
+        const dontShowKey = 'xaf-modeleditor.suppressStartDialog';
+        await context.globalState.update(dontShowKey, false);
+        vscode.window.showInformationMessage("The Model Editor start dialog will be shown again next time.");
+    });
+    context.subscriptions.push(resetDialogCmd);
     const openModelEditorCmd = vscode.commands.registerCommand('xaf-modeleditor.openModelEditor', async (fileUri) => {
         outputChannel.show(true);
         log('Command triggered for file: ' + (fileUri?.fsPath || 'undefined'));
@@ -117,15 +132,24 @@ function activate(context) {
                 vscode.window.showErrorMessage('No DLL or EXE found for Model Editor. Please build the solution first.');
                 return;
             }
-            // Show info dialog to user before launching Model Editor
-            const infoMsg = 'Model Editor is starting.\n' +
-                'This may take several seconds (just like in Visual Studio 2022).\n' +
-                '\n' +
-                'Executable: ' + exePath + '\n' +
-                'Arguments: ' + args.map(a => `"${a}"`).join(' ') + '\n' +
-                '\n' +
-                'If the Model Editor does not appear, check the Output panel for details.';
-            vscode.window.showInformationMessage(infoMsg, { modal: true }, 'OK');
+            // Show info dialog with "Don't show again" button (for compatibility)
+            const dontShowKey = 'xaf-modeleditor.suppressStartDialog';
+            const suppressDialog = context.globalState.get(dontShowKey, false);
+            if (!suppressDialog) {
+                const infoMsg = 'Model Editor is starting.\n' +
+                    'This may take several seconds (just like in Visual Studio 2022).\n' +
+                    '\n' +
+                    'Executable: ' + exePath + '\n' +
+                    'Arguments: ' + args.map(a => `"${a}"`).join(' ') + '\n' +
+                    '\n' +
+                    'If the Model Editor does not appear, check the Output panel for details.';
+                vscode.window.showInformationMessage(infoMsg, { modal: true }, 'OK', "Don't show again")
+                    .then(result => {
+                    if (result === "Don't show again") {
+                        context.globalState.update(dontShowKey, true);
+                    }
+                });
+            }
             log('Launching Model Editor with args: ' + JSON.stringify(args));
             let modelEditorProc = undefined;
             try {
