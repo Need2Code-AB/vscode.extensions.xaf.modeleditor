@@ -1,39 +1,31 @@
-<<<<<<< HEAD
-# vscode.extensions.xaf.modeleditor
-XAF Model Editor VS Code extension. Integrates DevExpress XAF Model Editor with VS Code, including context menu, solution build, and dynamic version detection.
-=======
 # XAF Model Editor VS Code Extension
 
-This extension integrates DevExpress XAF Model Editor with Visual Studio Code.
+This extension integrates the DevExpress XAF Model Editor into Visual Studio Code, enabling seamless editing of `Model.xafml` files with automatic version detection and robust error handling.
 
 ## Features
-- Högerklick/dubbelklick på `Model.xafml` öppnar Model Editor för rätt DevExpress-version
-- Bygger solutionen automatiskt innan Model Editor startas
-- Läser DevExpress-version från projektfil eller Directory.Build.props
-- Kontrollerar att rätt Model Editor-exe finns, annars får du länk till nedladdning
+- Detects DevExpress version from your project files
+- Launches the correct Model Editor executable for your version
+- Registers context menu and double-click actions for `Model.xafml`
+- Automatically builds the solution before launching the Model Editor
+- Provides user-friendly error messages and troubleshooting links
+- Designed for Windows environments
 
-## Installation
-1. Klona/förbered extensionen i din VS Code-miljö
-2. Bygg och installera som VSIX eller kör i utvecklingsläge
+## Requirements
+- Windows OS
+- DevExpress eXpressApp Framework (XAF) installed
+- .NET SDK (for building the solution)
 
-## Användning
-1. Högerklicka eller dubbelklicka på `Model.xafml`
-2. Extensionen bygger solutionen
-3. Model Editor startas med rätt argument
+## Usage
+1. Right-click or double-click a `Model.xafml` file in your XAF project.
+2. The extension will build your solution and launch the correct Model Editor.
+3. If the Model Editor executable is missing, a helpful message and download link will be shown.
 
-## Felsökning
-- Om Model Editor-exe saknas får du ett meddelande och länk till https://www.devexpress.com/ClientCenter/DownloadManager/
-- Kontrollera att DevExpress är installerat på standardplatsen
+## Troubleshooting
+- Ensure DevExpress is installed and the version matches your project.
+- If the Model Editor cannot be found, download it from: https://www.devexpress.com/ClientCenter/DownloadManager/
+- For issues, check the Output panel in VS Code for detailed logs.
 
-## Konfiguration
-- Om du har DevExpress på annan plats, kan du ange sökvägen i extension settings
+## Contributing
+Contributions are welcome! Please follow best practices for VS Code extension development and ensure all code is robust, well-documented, and maintainable.
 
-## Krav
-- DevExpress XAF installerat lokalt
-- Windows
-- .NET SDK (för build)
-
----
-
-För frågor, kontakta utvecklaren eller se DevExpress dokumentation.
->>>>>>> 00cd273 (Initial commit: XAF Model Editor VS Code extension)
+## License

@@ -1,47 +1,51 @@
 {
-    "name": "xaf-modeleditor",
-    "displayName": "XAF Model Editor Integration",
-    "description": "Integrates DevExpress XAF Model Editor with VS Code. Right-click or double-click Model.xafml to build and launch the correct Model Editor version.",
-    "version": "0.0.1",
-    "publisher": "your-publisher-name",
-    "engines": {
-        "vscode": ">=1.70.0"
-    },
-    "categories": [
-        "Other"
+  "name": "xaf-modeleditor",
+  "displayName": "XAF Model Editor Integration",
+  "description": "Integrates DevExpress XAF Model Editor with VS Code. Right-click or double-click Model.xafml to build and launch the correct Model Editor version.",
+  "version": "0.0.8",
+  "publisher": "Dvisious Need2Code AB",
+  "engines": {
+    "vscode": ">=1.70.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:xaf-modeleditor.openModelEditor",
+    "onLanguage:xml"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "xaf-modeleditor.openModelEditor",
+        "title": "Open with XAF Model Editor"
+      }
     ],
-    "activationEvents": [
-        "onCommand:xaf-modeleditor.openModelEditor",
-        "onLanguage:xml"
-    ],
-    "main": "./out/extension.js",
-    "contributes": {
-        "commands": [
-            {
-                "command": "xaf-modeleditor.openModelEditor",
-                "title": "Open with XAF Model Editor"
-            }
-        ],
-        "menus": {
-            "explorer/context": [
-                {
-                    "command": "xaf-modeleditor.openModelEditor",
-                    "when": "resourceExtname == .xafml",
-                    "group": "navigation@10"
-                }
-            ]
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "xaf-modeleditor.openModelEditor",
+          "when": "resourceExtname == .xafml",
+          "group": "navigation@10"
         }
-    },
-    "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -p ./",
-        "watch": "tsc -watch -p ./"
-    },
-    "devDependencies": {
-        "@types/node": "^20.0.0",
-        "@types/vscode": "^1.70.0",
-        "typescript": "^5.0.0",
-        "tslint": "^6.1.3"
-    },
-    "dependencies": {}
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.70.0",
+    "typescript": "^5.0.0",
+    "tslint": "^6.1.3"
+  },
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Need2Code-AB/vscode.extensions.xaf.modeleditor.git"
+  }
 }
