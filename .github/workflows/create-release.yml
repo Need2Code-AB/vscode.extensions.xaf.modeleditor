@@ -39,10 +39,27 @@ jobs:
       run: |
         VERSION=${{ github.event.inputs.version }}
         VERSION=${VERSION#v}  # Remove 'v' prefix if present
-        npm version $VERSION --no-git-tag-version
+        echo "Setting version to: $VERSION"
+        
+        # Update package.json directly with jq or sed
+        if command -v jq &> /dev/null; then
+          jq --arg version "$VERSION" '.version = $version' package.json > temp.json && mv temp.json package.json
+        else
+          sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" package.json
+        fi
+        
+        echo "Updated package.json version to: $VERSION"
+        grep '"version"' package.json
 
     - name: Package extension
       run: vsce package --no-dependencies
+
+    - name: Get VSIX filename
+      id: get_vsix
+      run: |
+        VSIX_FILE=$(ls *.vsix | head -1)
+        echo "vsix_file=$VSIX_FILE" >> $GITHUB_OUTPUT
+        echo "Found VSIX file: $VSIX_FILE"
 
     - name: Create Release
       id: create_release
@@ -62,6 +79,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./xaf-modeleditor-${{ github.event.inputs.version }}.vsix
-        asset_name: xaf-modeleditor-${{ github.event.inputs.version }}.vsix
+        asset_path: ./${{ steps.get_vsix.outputs.vsix_file }}
+        asset_name: ${{ steps.get_vsix.outputs.vsix_file }}
         asset_content_type: application/zip
