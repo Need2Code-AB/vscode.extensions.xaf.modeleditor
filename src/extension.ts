@@ -20,6 +20,13 @@ function log(message: string) {
  * Registers context menu and double-click for Model.xafml files.
  */
 export function activate(context: vscode.ExtensionContext) {
+    // Command to reset the "Don't show again" dialog
+    const resetDialogCmd = vscode.commands.registerCommand('xaf-modeleditor.resetStartDialog', async () => {
+        const dontShowKey = 'xaf-modeleditor.suppressStartDialog';
+        await context.globalState.update(dontShowKey, false);
+        vscode.window.showInformationMessage("The Model Editor start dialog will be shown again next time.");
+    });
+    context.subscriptions.push(resetDialogCmd);
     const openModelEditorCmd = vscode.commands.registerCommand('xaf-modeleditor.openModelEditor', async (fileUri: vscode.Uri) => {
         outputChannel.show(true);
         log('Command triggered for file: ' + (fileUri?.fsPath || 'undefined'));
