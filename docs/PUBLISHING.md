@@ -10,24 +10,51 @@ This guide explains how to set up automated publishing of the XAF Model Editor e
 2. Sign in with your Microsoft/Azure account
 3. Create a publisher (or use existing): `DvisiousNeed2CodeAB`
 
-### 2. Personal Access Token (PAT)
+### 2. Azure DevOps Personal Access Token (PAT)
 
-1. Go to [Azure DevOps](https://dev.azure.com)
-2. Click on **User settings** → **Personal access tokens**
-3. Create a new token with:
-   - **Name**: `VS Code Marketplace Publishing`
-   - **Scopes**: Select **Custom defined** → **Marketplace** → **Manage**
-   - **Expiration**: Set appropriate duration (e.g., 1 year)
-4. **Copy the token** (you won't see it again!)
+⚠️ **Important**: VS Code Marketplace requires an **Azure DevOps PAT**, not a GitHub PAT.
+
+#### Step-by-step PAT Creation:
+
+1. **Create Azure DevOps Organization** (if you don't have one):
+   - Go to [Azure DevOps](https://dev.azure.com)
+   - Sign in with the same Microsoft account used for VS Code Marketplace
+   - Create your own organization (e.g., `vscode` or `your-company-name`)
+
+2. **Create Personal Access Token**:
+   - From your organization's home page (e.g., `https://dev.azure.com/your-org`)
+   - Click **User settings** dropdown next to your profile image
+   - Select **Personal access tokens**
+
+3. **Configure the Token**:
+   - Click **New Token**
+   - Fill out the details:
+     - **Name**: `VS Code Marketplace Publishing`
+     - **Organization**: **All accessible organizations**
+     - **Expiration**: Set desired expiration date (e.g., 1 year)
+     - **Scopes**: Select **Custom defined**
+       - Click **Show all scopes**
+       - Scroll to **Marketplace** and select **Manage**
+
+4. **Save the Token**:
+   - Click **Create**
+   - **Copy the token immediately** (you won't see it again!)
+
+#### Verify your Publisher:
+```bash
+# Test your token works
+vsce login DvisiousNeed2CodeAB
+# Enter your PAT when prompted
+```
 
 ### 3. GitHub Repository Secrets
 
-Add the following secret to your GitHub repository:
+Add the Azure DevOps PAT to your GitHub repository:
 
 1. Go to **Settings** → **Secrets and variables** → **Actions**
-2. Add **Repository secret**:
+2. Click **New repository secret**:
    - **Name**: `VSCE_PAT`
-   - **Value**: [Your Personal Access Token from step 2]
+   - **Value**: [Your Azure DevOps PAT from step 2]
 
 ## Automated Workflows
 
@@ -40,24 +67,40 @@ Add the following secret to your GitHub repository:
 - Automatically publishes to VS Code Marketplace
 - Attaches VSIX file to GitHub release
 
-## Manual Publishing
+## Publishing Methods
 
-### Using Scripts
+### Method 1: Automated via GitHub Release (Recommended)
+
+1. Go to **Actions** → **Create Release** workflow
+2. Click **Run workflow**
+3. Enter version (e.g., `v0.0.19`) and release notes
+4. The workflow will:
+   - Build the extension
+   - Create a GitHub release
+   - Automatically publish to VS Code Marketplace
+   - Attach VSIX file to the release
+
+### Method 2: Manual Publishing
+
 ```bash
-# Package extension
-npm run package
+# Install vsce globally (if not already installed)
+npm install -g @vscode/vsce
 
-# Publish to marketplace
+# Publish with your Azure DevOps PAT
+vsce publish --pat YOUR_AZURE_DEVOPS_PAT
+
+# Or using npm script (requires VSCE_PAT environment variable)
 npm run publish
 ```
 
-### Using PowerShell Script
-```powershell
-# Build and package (existing script)
-.\build-vsix.ps1
+### Method 3: Using TFX CLI (Alternative)
 
-# Publish manually using vsce
-vsce publish --no-dependencies
+```bash
+# Install TFX CLI
+npm install -g tfx-cli
+
+# Publish extension
+tfx extension publish --publisher DvisiousNeed2CodeAB --vsix xaf-modeleditor-0.0.18.vsix --auth-type pat -t YOUR_AZURE_DEVOPS_PAT
 ```
 
 ## Creating a Release
