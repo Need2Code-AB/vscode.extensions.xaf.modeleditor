@@ -89,13 +89,21 @@ function activate(context) {
                 return;
             }
             const versionShort = version.split('.').slice(0, 2).join('.');
-            // 2. Build Model Editor path
-            const modelEditorDir = `C:/Program Files/DevExpress ${versionShort}/Components/Tools/eXpressAppFrameworkNetCore/Model Editor/`;
-            const exeName = `DevExpress.ExpressApp.ModelEditor.v${versionShort}.exe`;
-            const exePath = path.join(modelEditorDir, exeName);
-            log('Model Editor exe path: ' + exePath);
+            // 2. Check for user override in settings
+            const config = vscode.workspace.getConfiguration('xafModelEditor');
+            let exePath = config.get('modelEditorPath');
+            if (exePath && exePath.trim().length > 0) {
+                exePath = exePath.trim();
+                log('Using user-configured Model Editor path: ' + exePath);
+            }
+            else {
+                const modelEditorDir = `C:/Program Files/DevExpress ${versionShort}/Components/Tools/eXpressAppFrameworkNetCore/Model Editor/`;
+                const exeName = `DevExpress.ExpressApp.ModelEditor.v${versionShort}.exe`;
+                exePath = path.join(modelEditorDir, exeName);
+                log('Model Editor exe path (auto-detected): ' + exePath);
+            }
             if (!fs.existsSync(exePath)) {
-                vscode.window.showErrorMessage(`Model Editor executable not found: ${exePath}\nDownload the correct version from DevExpress.`, 'Download').then(selection => {
+                vscode.window.showErrorMessage(`Model Editor executable not found: ${exePath}\nDownload the correct version from DevExpress or set a custom path in settings.`, 'Download').then(selection => {
                     if (selection === 'Download') {
                         vscode.env.openExternal(vscode.Uri.parse('https://www.devexpress.com/ClientCenter/DownloadManager/'));
                     }

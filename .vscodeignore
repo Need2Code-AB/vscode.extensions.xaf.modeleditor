@@ -1,0 +1,27 @@
+# Build outputs
+out/test/**
+out/**/*.map
+src/**
+tsconfig.json
+
+# Development files
+.vscode/**
+.vscode-test/**
+.gitignore
+.github/**
+build-vsix.ps1
+docs/**
+
+# Dependencies (already bundled)
+node_modules/**
+
+# Source files (only compiled output needed)
+**/*.ts
+!out/**/*.js
+
+# Documentation (already in README)
+*.md
+!README.md
+
+# Test files
+**/test/**

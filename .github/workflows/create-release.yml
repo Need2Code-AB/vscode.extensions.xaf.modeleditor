@@ -1,0 +1,67 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v0.0.18)'
+        required: true
+        default: 'v0.0.18'
+      release_notes:
+        description: 'Release notes'
+        required: false
+        default: 'Bug fixes and improvements'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Compile TypeScript
+      run: npm run compile
+
+    - name: Install vsce
+      run: npm install -g @vscode/vsce
+
+    - name: Update package.json version
+      run: |
+        VERSION=${{ github.event.inputs.version }}
+        VERSION=${VERSION#v}  # Remove 'v' prefix if present
+        npm version $VERSION --no-git-tag-version
+
+    - name: Package extension
+      run: vsce package --no-dependencies
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.event.inputs.version }}
+        release_name: XAF Model Editor ${{ github.event.inputs.version }}
+        body: ${{ github.event.inputs.release_notes }}
+        draft: false
+        prerelease: false
+
+    - name: Upload VSIX to Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./xaf-modeleditor-${{ github.event.inputs.version }}.vsix
+        asset_name: xaf-modeleditor-${{ github.event.inputs.version }}.vsix
+        asset_content_type: application/zip
