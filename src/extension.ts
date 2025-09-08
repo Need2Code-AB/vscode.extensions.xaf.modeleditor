@@ -84,6 +84,16 @@ export function activate(context: vscode.ExtensionContext) {
                 vscode.window.showErrorMessage('No DLL or EXE found for Model Editor. Please build the solution first.');
                 return;
             }
+            // Show info dialog to user before launching Model Editor
+            const infoMsg =
+                'Model Editor is starting.\n' +
+                'This may take several seconds (just like in Visual Studio 2022).\n' +
+                '\n' +
+                'Executable: ' + exePath + '\n' +
+                'Arguments: ' + args.map(a => `"${a}"`).join(' ') + '\n' +
+                '\n' +
+                'If the Model Editor does not appear, check the Output panel for details.';
+            vscode.window.showInformationMessage(infoMsg, { modal: true }, 'OK');
             log('Launching Model Editor with args: ' + JSON.stringify(args));
             let modelEditorProc: any = undefined;
             try {
