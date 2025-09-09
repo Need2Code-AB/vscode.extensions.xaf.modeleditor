@@ -214,8 +214,8 @@ async function findProjectFile(fileUri) {
  */
 async function getDevExpressVersion(projectFile) {
     const content = fs.readFileSync(projectFile, 'utf8');
-    // Match any DevExpress.ExpressApp.* package reference and extract the version
-    const regex = /<PackageReference[^>]*Include="DevExpress\.ExpressApp[^"]*"[^>]*Version="([0-9.]+)"/g;
+    // Match any DevExpress.ExpressApp.* package reference and extract the version (including wildcards)
+    const regex = /<PackageReference[^>]*Include="DevExpress\.ExpressApp[^\"]*"[^>]*Version="([^"]+)"/g;
     let match;
     while ((match = regex.exec(content)) !== null) {
         if (match[1])
@@ -225,7 +225,7 @@ async function getDevExpressVersion(projectFile) {
     const lines = content.split(/\r?\n/);
     for (const line of lines) {
         if (line.includes('DevExpress.ExpressApp')) {
-            const versionMatch = line.match(/Version\s*=\s*['\"]([0-9.]+)['\"]/);
+            const versionMatch = line.match(/Version\s*=\s*['\"]([^'\"]+)['\"]/);
             if (versionMatch)
                 return versionMatch[1];
         }
