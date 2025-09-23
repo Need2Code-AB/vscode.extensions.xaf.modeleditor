@@ -181,21 +181,81 @@ async function findProjectFile(fileUri: vscode.Uri): Promise<string | undefined>
  * Reads DevExpress.ExpressApp version from project file.
  */
 async function getDevExpressVersion(projectFile: string): Promise<string | undefined> {
+    // First: search upwards for a Directory.Packages.props (Central Package Management)
+    let dir = path.dirname(projectFile);
+    while (dir && dir.length > 2) {
+        const centralPath = path.join(dir, 'Directory.Packages.props');
+        if (fs.existsSync(centralPath)) {
+            log(`[getDevExpressVersion] Found Directory.Packages.props at: ${centralPath}`);
+            try {
+                const centralContent = fs.readFileSync(centralPath, 'utf8');
+                // Match PackageVersion entries: <PackageVersion Include="DevExpress.ExpressApp.Blazor" Version="24.2.*" />
+                const pkgRegex = /<PackageVersion[^>]*?(?:Include|Update)="([^"]+)"[^>]*?Version="([^"]+)"/g;
+                let m;
+                while ((m = pkgRegex.exec(centralContent)) !== null) {
+                    const pkgName = m[1];
+                    const ver = m[2];
+                    if (pkgName && pkgName.startsWith('DevExpress')) {
+                        log(`[getDevExpressVersion] Found version for ${pkgName} in Directory.Packages.props: ${ver}`);
+                        return ver;
+                    }
+                }
+                // Also try PackageReference-like entries inside central file (rare but possible)
+                const altRegex = /<PackageReference[^>]*?(?:Include|Update)="([^"]+)"[^>]*?Version="([^"]+)"/g;
+                while ((m = altRegex.exec(centralContent)) !== null) {
+                    const pkgName = m[1];
+                    const ver = m[2];
+                    if (pkgName && pkgName.startsWith('DevExpress')) {
+                        log(`[getDevExpressVersion] Found version for ${pkgName} in Directory.Packages.props (alternate): ${ver}`);
+                        return ver;
+                    }
+                }
+            } catch (e: any) {
+                log(`[getDevExpressVersion] ERROR reading Directory.Packages.props: ${e?.message || e}`);
+            }
+            // If central file exists but no DevExpress entries found, still break and fall back to project file parsing
+            break;
+        }
+        dir = path.dirname(dir);
+    }
+
+    // Fallback: read project file and look for DevExpress package versions
     const content = fs.readFileSync(projectFile, 'utf8');
+    log(`[getDevExpressVersion] Inspecting project file: ${projectFile}`);
     // Match any DevExpress.ExpressApp.* package reference and extract the version (including wildcards)
-    const regex = /<PackageReference[^>]*Include="DevExpress\.ExpressApp[^\"]*"[^>]*Version="([^"]+)"/g;
+    const regex = /<PackageReference[^>]*Include="DevExpress\.ExpressApp[^"]*"[^>]*Version="([^"]+)"/g;
     let match;
     while ((match = regex.exec(content)) !== null) {
-        if (match[1]) return match[1];
-    }
-    // Fallback: try to match Version attribute anywhere on a line with DevExpress.ExpressApp
-    const lines = content.split(/\r?\n/);
-    for (const line of lines) {
-        if (line.includes('DevExpress.ExpressApp')) {
-            const versionMatch = line.match(/Version\s*=\s*['\"]([^'\"]+)['\"]/);
-            if (versionMatch) return versionMatch[1];
+        if (match[1]) {
+            log(`[getDevExpressVersion] Found DevExpress.ExpressApp package version in project file: ${match[1]}`);
+            return match[1];
         }
     }
+
+    // Generic PackageReference entries (broader match)
+    const pkgRegex2 = /<PackageReference[^>]*?(?:Include|Update)="([^"]+)"[^>]*?Version="([^"]+)"/g;
+    while ((match = pkgRegex2.exec(content)) !== null) {
+        const pkgName = match[1];
+        const ver = match[2];
+        if (pkgName && pkgName.startsWith('DevExpress')) {
+            log(`[getDevExpressVersion] Found ${pkgName} version in project file: ${ver}`);
+            return ver;
+        }
+    }
+
+    // Fallback: try to find any Version attribute on lines mentioning DevExpress
+    const lines = content.split(/\r?\n/);
+    for (const line of lines) {
+        if (line.includes('DevExpress')) {
+            const versionMatch = line.match(/Version\s*=\s*['\"]([^'\"]+)['\"]/);
+            if (versionMatch) {
+                log(`[getDevExpressVersion] Line-based match for DevExpress version: ${versionMatch[1]}`);
+                return versionMatch[1];
+            }
+        }
+    }
+
+    log('[getDevExpressVersion] DevExpress version not found in central or project files.');
     return undefined;
 }
 
