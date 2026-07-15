@@ -2,7 +2,7 @@
   "name": "xaf-modeleditor",
   "displayName": "XAF Model Editor Integration",
   "description": "Integrates DevExpress XAF Model Editor with VS Code. Right-click or double-click Model.xafml to build and launch the correct Model Editor version.",
-  "version": "0.0.20",
+  "version": "0.0.24",
   "publisher": "DvisiousNeed2CodeAB",
   "engines": {
     "vscode": ">=1.70.0"
@@ -60,10 +60,20 @@
       "type": "object",
       "title": "XAF Model Editor",
       "properties": {
-        "modelEditorPath": {
+        "xafModelEditor.modelEditorPath": {
           "type": "string",
           "default": "",
-          "description": "Optional: Override the default path to the DevExpress Model Editor executable. If set, this path will be used instead of the auto-detected one. Example: D:/DevExpress/Tools/ModelEditor/DevExpress.ExpressApp.ModelEditor.v24.2.exe"
+          "description": "Optional: Override the path to the DevExpress Model Editor executable. On Linux/macOS this is required — point it at the Windows Model Editor .exe (it is launched via Wine). Example (Windows): D:/DevExpress/Tools/ModelEditor/DevExpress.ExpressApp.ModelEditor.v24.2.exe — Example (Linux): /home/me/source/Model Editor/DevExpress.ExpressApp.ModelEditor.x64.v25.2.exe"
+        },
+        "xafModelEditor.wineCommand": {
+          "type": "string",
+          "default": "wine",
+          "description": "Non-Windows only: the Wine command used to run the Windows Model Editor .exe (e.g. 'wine' or 'wine64')."
+        },
+        "xafModelEditor.winePrefix": {
+          "type": "string",
+          "default": "",
+          "description": "Non-Windows only: WINEPREFIX for the Model Editor. Must contain the Windows .NET 9 Desktop + ASP.NET Core runtimes. Defaults to ~/.wine-modeleditor when empty."
         }
       }
     }

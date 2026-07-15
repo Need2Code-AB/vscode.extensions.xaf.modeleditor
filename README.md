@@ -6,17 +6,26 @@
 This extension integrates the DevExpress XAF Model Editor into Visual Studio Code, enabling seamless editing of `Model.xafml` files with automatic version detection and robust error handling.
 
 ## Features
-- Detects DevExpress version from your project files
+- Detects DevExpress version from your project files (incl. `Directory.Packages.props` central package management)
 - Launches the correct Model Editor executable for your version
 - Registers context menu and double-click actions for `Model.xafml`
 - Automatically builds the solution before launching the Model Editor
 - Provides user-friendly error messages and troubleshooting links
-- Designed for Windows environments
+- **Cross-platform: Windows natively, plus Linux and macOS via Wine**
 
 ## Requirements
-- Windows OS
-- DevExpress eXpressApp Framework (XAF) installed
+
+**Windows**
+- DevExpress eXpressApp Framework (XAF) installed (ships the Model Editor)
 - .NET SDK (for building the solution)
+
+**Linux / macOS (via Wine)**
+- [Wine](https://www.winehq.org/) (10.0+ recommended)
+- A Wine prefix containing the **Windows .NET 9 Desktop Runtime** + **ASP.NET Core Runtime** (the Model Editor is a .NET 9 WinForms app)
+- The Model Editor binaries copied from a Windows DevExpress install (see below)
+- .NET SDK (for building the solution)
+
+See **[docs/linux-wine-setup.md](docs/linux-wine-setup.md)** for a copy‑paste setup (there is a `scripts/setup-wine.sh` that automates it).
 
 ## Usage
 
