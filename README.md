@@ -103,9 +103,6 @@ seconds (it builds the solution). Watch **Output → XAF Model Editor** if anyth
 
 1. **Right-click** a `Model.xafml` file in the Explorer (or use the **XAF Model Files** view).
 2. Choose **Open with XAF Model Editor**.
-
-   ![Open with XAF Model Editor](docs/context-menu.png)
-
 3. The extension builds the solution and launches the editor for your DevExpress version.
 
 ## Configuration
@@ -154,7 +151,6 @@ Example (Windows):
 ├── scripts/
 │   └── setup-wine.sh             # Linux/macOS: configure Wine + .NET runtimes
 ├── docs/
-│   ├── context-menu.png          # Screenshot used in this README
 │   ├── linux-wine-setup.md       # Wine setup guide
 │   └── PUBLISHING.md             # Publishing & CI/CD guide
 ├── build-vsix.ps1                # PowerShell build helper
