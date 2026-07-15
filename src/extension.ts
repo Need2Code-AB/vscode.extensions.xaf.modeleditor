@@ -63,6 +63,24 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage("The Model Editor start dialog will be shown again next time.");
     });
     context.subscriptions.push(resetDialogCmd);
+    // Command: run the bundled Wine setup script (Linux/macOS). The script ships inside the
+    // extension package, so users don't need the repo — this locates and runs it for them.
+    const setupWineCmd = vscode.commands.registerCommand('xaf-modeleditor.setupWine', async () => {
+        if (isWindows) {
+            vscode.window.showInformationMessage('Wine setup is only needed on Linux/macOS — on Windows the Model Editor runs natively.');
+            return;
+        }
+        const script = context.asAbsolutePath(path.join('scripts', 'setup-wine.sh'));
+        if (!fs.existsSync(script)) {
+            vscode.window.showErrorMessage(`Wine setup script not found in the extension package (${script}).`);
+            return;
+        }
+        try { fs.chmodSync(script, 0o755); } catch { /* best effort */ }
+        const terminal = vscode.window.createTerminal('XAF Model Editor — Wine setup');
+        terminal.show(true);
+        terminal.sendText(`bash ${JSON.stringify(script)}`);
+    });
+    context.subscriptions.push(setupWineCmd);
     const openModelEditorCmd = vscode.commands.registerCommand('xaf-modeleditor.openModelEditor', async (fileUri: vscode.Uri) => {
         outputChannel.show(true);
         log('Command triggered for file: ' + (fileUri?.fsPath || 'undefined'));

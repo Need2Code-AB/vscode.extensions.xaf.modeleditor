@@ -65,10 +65,16 @@ the `xafModelEditor.modelEditorPath` setting (see [Configuration](#configuration
 The Model Editor is a Windows .NET WinForms application, so it runs through
 [Wine](https://www.winehq.org/). Two one-time steps:
 
-**a) Configure Wine + the .NET runtimes** — run the helper script (installs Wine if missing,
-creates a dedicated prefix, and installs the Windows .NET Desktop + ASP.NET Core runtimes):
+**a) Configure Wine + the .NET runtimes.** Open the **Command Palette** (`Ctrl+Shift+P`) and run
+**“XAF Model Editor: Set up Wine (Linux/macOS)”**. This runs the setup script that ships inside
+the extension — it installs Wine (if missing), creates a dedicated prefix, and installs the
+Windows .NET Desktop + ASP.NET Core runtimes.
+
+Prefer a terminal? The script is bundled with the installed extension:
 
 ```bash
+bash ~/.vscode/extensions/dvisiousneed2codeab.xaf-modeleditor-*/scripts/setup-wine.sh
+# …or, from a clone of this repository:
 ./scripts/setup-wine.sh
 ```
 
