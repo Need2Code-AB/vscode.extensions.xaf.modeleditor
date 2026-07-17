@@ -36,10 +36,37 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 exports.deactivate = deactivate;
 const modelTree_1 = require("./modelTree");
+const artifactsLayout_1 = require("./artifactsLayout");
 const vscode = __importStar(require("vscode"));
 const fs = __importStar(require("fs"));
+const os = __importStar(require("os"));
 const path = __importStar(require("path"));
 const child_process_1 = require("child_process");
+// The Model Editor is a Windows-only WinForms .exe. On Linux/macOS we launch it
+// through Wine, which maps the Unix root at the Z: drive — so absolute Unix paths
+// passed as arguments must be converted to Windows form (Z:\foo\bar).
+const isWindows = process.platform === 'win32';
+function toWinePath(p) {
+    return 'Z:' + path.resolve(p).replace(/\//g, '\\');
+}
+// VS Code installed as a Snap confines HOME/XDG to ~/snap/code/<rev>/…, so os.homedir()
+// points into the sandbox rather than the user's real home. Resolve the real home so the
+// Model Editor binaries and Wine prefix are found at their conventional locations.
+function userHome() {
+    if (process.env.SNAP_REAL_HOME) {
+        return process.env.SNAP_REAL_HOME;
+    }
+    const home = os.homedir();
+    const snapMatch = home.match(/^(.*)\/snap\/[^/]+\/[^/]+\/?$/);
+    return snapMatch ? snapMatch[1] : home;
+}
+function userDataHome() {
+    // Ignore a snap-redirected XDG_DATA_HOME; anchor on the real home.
+    if (!process.env.SNAP && process.env.XDG_DATA_HOME) {
+        return process.env.XDG_DATA_HOME;
+    }
+    return path.join(userHome(), '.local', 'share');
+}
 // Output channel for extension logs
 const outputChannel = vscode.window.createOutputChannel('XAF Model Editor');
 // Optional: log to file (uncomment if needed)
@@ -69,6 +96,27 @@ function activate(context) {
         vscode.window.showInformationMessage("The Model Editor start dialog will be shown again next time.");
     });
     context.subscriptions.push(resetDialogCmd);
+    // Command: run the bundled Wine setup script (Linux/macOS). The script ships inside the
+    // extension package, so users don't need the repo — this locates and runs it for them.
+    const setupWineCmd = vscode.commands.registerCommand('xaf-modeleditor.setupWine', async () => {
+        if (isWindows) {
+            vscode.window.showInformationMessage('Wine setup is only needed on Linux/macOS — on Windows the Model Editor runs natively.');
+            return;
+        }
+        const script = context.asAbsolutePath(path.join('scripts', 'setup-wine.sh'));
+        if (!fs.existsSync(script)) {
+            vscode.window.showErrorMessage(`Wine setup script not found in the extension package (${script}).`);
+            return;
+        }
+        try {
+            fs.chmodSync(script, 0o755);
+        }
+        catch { /* best effort */ }
+        const terminal = vscode.window.createTerminal('XAF Model Editor — Wine setup');
+        terminal.show(true);
+        terminal.sendText(`bash ${JSON.stringify(script)}`);
+    });
+    context.subscriptions.push(setupWineCmd);
     const openModelEditorCmd = vscode.commands.registerCommand('xaf-modeleditor.openModelEditor', async (fileUri) => {
         outputChannel.show(true);
         log('Command triggered for file: ' + (fileUri?.fsPath || 'undefined'));
@@ -96,11 +144,22 @@ function activate(context) {
                 exePath = exePath.trim();
                 log('Using user-configured Model Editor path: ' + exePath);
             }
-            else {
+            else if (isWindows) {
                 const modelEditorDir = `C:/Program Files/DevExpress ${versionShort}/Components/Tools/eXpressAppFrameworkNetCore/Model Editor/`;
                 const exeName = `DevExpress.ExpressApp.ModelEditor.v${versionShort}.exe`;
                 exePath = path.join(modelEditorDir, exeName);
-                log('Model Editor exe path (auto-detected): ' + exePath);
+                log('Model Editor exe path (auto-detected, Windows): ' + exePath);
+            }
+            else {
+                // Linux/macOS default: XDG data dir, version-scoped (mirrors the Windows Program Files
+                // layout). Drop the version's Model Editor folder here and it is found automatically:
+                //   ~/.local/share/xaf-modeleditor/<version>/DevExpress.ExpressApp.ModelEditor.x64.v<version>.exe
+                const dataHome = userDataHome();
+                const modelEditorDir = path.join(dataHome, 'xaf-modeleditor', versionShort);
+                const x64 = path.join(modelEditorDir, `DevExpress.ExpressApp.ModelEditor.x64.v${versionShort}.exe`);
+                const anyCpu = path.join(modelEditorDir, `DevExpress.ExpressApp.ModelEditor.v${versionShort}.exe`);
+                exePath = fs.existsSync(x64) ? x64 : anyCpu;
+                log('Model Editor exe path (auto-detected, Wine): ' + exePath);
             }
             if (!fs.existsSync(exePath)) {
                 vscode.window.showErrorMessage(`Model Editor executable not found: ${exePath}\nDownload the correct version from DevExpress or set a custom path in settings.`, 'Download').then(selection => {
@@ -161,7 +220,31 @@ function activate(context) {
             log('Launching Model Editor with args: ' + JSON.stringify(args));
             let modelEditorProc = undefined;
             try {
-                modelEditorProc = (0, child_process_1.spawn)(exePath, args, { detached: true, stdio: 'ignore' });
+                if (isWindows) {
+                    modelEditorProc = (0, child_process_1.spawn)(exePath, args, { detached: true, stdio: 'ignore' });
+                }
+                else {
+                    // Linux/macOS: run the Windows .exe through Wine. The .exe path can stay Unix-style
+                    // (Wine resolves it), but path arguments handed to the .NET app must be Windows form.
+                    const wineCommand = (config.get('wineCommand') || '').trim() || 'wine';
+                    const winePrefix = (config.get('winePrefix') || '').trim()
+                        || path.join(userHome(), '.wine-modeleditor');
+                    const wineArgs = [exePath, ...args.map(a => (path.isAbsolute(a) ? toWinePath(a) : a))];
+                    const env = {
+                        ...process.env,
+                        WINEPREFIX: winePrefix,
+                        WINEDEBUG: process.env.WINEDEBUG || '-all',
+                        // .NET-under-Wine stability. Loading a large XAF model otherwise crashes the CLR
+                        // with an ExecutionEngineException (0x80131506) at the end of model build. Forcing
+                        // pure JIT (no tiered/R2R) and the workstation GC keeps Wine's runtime stable.
+                        DOTNET_TieredCompilation: process.env.DOTNET_TieredCompilation || '0',
+                        DOTNET_TieredPGO: process.env.DOTNET_TieredPGO || '0',
+                        DOTNET_ReadyToRun: process.env.DOTNET_ReadyToRun || '0',
+                        DOTNET_gcServer: process.env.DOTNET_gcServer || '0',
+                    };
+                    log(`Launching via Wine: ${wineCommand} (WINEPREFIX=${winePrefix}) args=${JSON.stringify(wineArgs)}`);
+                    modelEditorProc = (0, child_process_1.spawn)(wineCommand, wineArgs, { detached: true, stdio: 'ignore', env });
+                }
             }
             catch (spawnErr) {
                 log('ERROR: Failed to spawn Model Editor process: ' + (spawnErr?.message || spawnErr));
@@ -391,9 +474,14 @@ async function getModelEditorArgs(projectFile, xafmlUri) {
         log(`[getModelEditorArgs] Found DLL: ${dll} (config: ${foundConfig}, target: ${foundTarget})`);
         return [dll, dir];
     }
-    else {
-        log('[getModelEditorArgs] No DLL found in any bin/<config>/net*/ folder. Fallback to .exe scenario.');
+    // Not found in the per-project bin — try the .NET 8+ artifacts output layout, where every
+    // project's output lives under <repoRoot>/artifacts/bin/<ProjectName>/<config>[_<tfm>]/.
+    const artifactsDll = (0, artifactsLayout_1.findDllInArtifactsLayout)(projectFile, log);
+    if (artifactsDll) {
+        log(`[getModelEditorArgs] Found DLL in artifacts output layout: ${artifactsDll}`);
+        return [artifactsDll, dir];
     }
+    log('[getModelEditorArgs] No DLL found in per-project bin or artifacts layout. Fallback to .exe scenario.');
     // Otherwise, fallback to .exe.config and .exe (Win scenario)
     log('[getModelEditorArgs] Fallback: searching for .exe and .config in ' + dir);
     const exe = fs.readdirSync(dir).find(f => f.endsWith('.exe'));
