@@ -1,4 +1,5 @@
 import { XafModelTreeProvider } from './modelTree';
+import { findDllInArtifactsLayout } from './artifactsLayout';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -386,40 +387,6 @@ async function buildSolution(solutionFile: string): Promise<boolean> {
 /**
  * Determines the correct arguments for Model Editor based on project type.
  */
-/**
- * Locates the project's output DLL in the .NET 8+ "artifacts output layout"
- * (https://learn.microsoft.com/dotnet/core/sdk/artifacts-output), where bin/obj move out of each
- * project into <repoRoot>/artifacts/. Layout: artifacts/bin/<ProjectName>/<pivot>/<ProjectName>.dll
- * where <pivot> is e.g. "debug", "release", or "debug_net9.0" for multi-targeted projects.
- */
-function findDllInArtifactsLayout(projectFile: string): string | undefined {
-    const projectName = path.basename(projectFile, path.extname(projectFile));
-    let dir = path.dirname(projectFile);
-    while (dir && dir.length > 2) {
-        const artifactsBin = path.join(dir, 'artifacts', 'bin');
-        if (fs.existsSync(artifactsBin)) {
-            const projectBin = path.join(artifactsBin, projectName);
-            if (fs.existsSync(projectBin)) {
-                let pivots: string[] = [];
-                try {
-                    pivots = fs.readdirSync(projectBin)
-                        .filter(p => { try { return fs.statSync(path.join(projectBin, p)).isDirectory(); } catch { return false; } });
-                } catch { /* ignore */ }
-                // Prefer a Debug build when several pivots exist.
-                pivots.sort((a, b) => (a.toLowerCase().startsWith('debug') ? -1 : 0) - (b.toLowerCase().startsWith('debug') ? -1 : 0));
-                for (const pivot of pivots) {
-                    const candidate = path.join(projectBin, pivot, `${projectName}.dll`);
-                    if (fs.existsSync(candidate)) { return candidate; }
-                }
-            }
-            return undefined; // artifacts root found, but no matching DLL — don't keep walking up
-        }
-        if (fs.existsSync(path.join(dir, '.git'))) { break; } // stop at the repo root
-        dir = path.dirname(dir);
-    }
-    return undefined;
-}
-
 async function getModelEditorArgs(projectFile: string, xafmlUri: vscode.Uri): Promise<string[]> {
     const dir = path.dirname(projectFile);
     log(`[getModelEditorArgs] Project dir: ${dir}`);
@@ -472,7 +439,7 @@ async function getModelEditorArgs(projectFile: string, xafmlUri: vscode.Uri): Pr
     }
     // Not found in the per-project bin — try the .NET 8+ artifacts output layout, where every
     // project's output lives under <repoRoot>/artifacts/bin/<ProjectName>/<config>[_<tfm>]/.
-    const artifactsDll = findDllInArtifactsLayout(projectFile);
+    const artifactsDll = findDllInArtifactsLayout(projectFile, log);
     if (artifactsDll) {
         log(`[getModelEditorArgs] Found DLL in artifacts output layout: ${artifactsDll}`);
         return [artifactsDll, dir];

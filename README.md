@@ -29,6 +29,17 @@ Wine**.
 | **Linux** | Windows `.exe` via **Wine** | Wine + .NET runtimes + editor binaries |
 | **macOS** | Windows `.exe` via **Wine** | Wine (+ Rosetta 2 on Apple Silicon) + runtimes + binaries |
 
+**Build layouts:** both the classic per-project `bin/<config>/<tfm>/` layout and the .NET 8+
+[artifacts output layout](https://learn.microsoft.com/en-us/dotnet/core/sdk/artifacts-output)
+(`<UseArtifactsOutput>`) are supported and auto-detected.
+
+> **Platform notes & deep dives** live in [`docs/`](docs/):
+> - [Running on Linux & macOS via Wine](docs/linux-wine-setup.md) — full setup for all three platforms.
+> - [Artifacts output layout & module dependency-closure](docs/specs/artifacts-output-layout.md) —
+>   why opening the Model Editor against a **module** project needs its dependency closure
+>   (set `<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>`, or let the extension
+>   resolve it from the startup app's output), plus the current cross-platform validation status.
+
 ---
 
 ## Installation & setup
